@@ -1,6 +1,7 @@
-version: "3.9"
-name: "road_vision__database"
+name: "road_vision_storage"
+
 services:
+  # Сервіс бази даних PostgreSQL
   postgres_db:
     image: postgres:latest
     container_name: postgres_db
@@ -10,14 +11,14 @@ services:
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: test_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/pgdata # Додаємо підпапку pgdata
       - ./db/structure.sql:/docker-entrypoint-initdb.d/structure.sql
     ports:
       - "5432:5432"
     networks:
-      db_network:
+      - db_network
 
-
+  # Панель керування БД PgAdmin
   pgadmin:
     container_name: pgadmin4
     image: dpage/pgadmin4
@@ -25,17 +26,16 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
     ports:
       - "5050:80"
     networks:
-      db_network:
+      - db_network
 
-
+  # Сервіс Store (FastAPI)
   store:
     container_name: store
-    build: ..
+    build: 
+      context: ..
     depends_on:
       - postgres_db
     restart: always
@@ -45,16 +45,14 @@ services:
       POSTGRES_DB: test_db
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
+      PGDATA: /var/lib/postgresql/data/pgdata # Додаємо цей рядок
     ports:
       - "8000:8000"
     networks:
-      db_network:
-
+      - db_network
 
 networks:
   db_network:
 
-
 volumes:
   postgres_data:
-  pgadmin-data:
